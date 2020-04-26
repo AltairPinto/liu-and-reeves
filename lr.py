@@ -114,13 +114,38 @@ def artificial_processing_time(m, n, p, u, i, j):
 
 # Eqs. 8 and 9
 def artificial_completion_time(m, n, p, pi, u, i, j):
-    if i < 0:
-        return 0.
+    # completion_time
+    c = zeros((m+1, len(pi)+1))
 
-    lhs = float(completion_time_if_next(m, n, p, pi, i, j))
-    rhs = artificial_completion_time(m, n, p, pi, u, i-1, j)
-    p_ia = artificial_processing_time(m, n, p, u, i, j)
-    return max(lhs, rhs) + p_ia
+    for machine in range(1, c.shape[0]):
+        for job in range(1, c.shape[1]):
+            lhs = c[machine - 1][job]
+            rhs = c[machine][job - 1]
+
+            p_ij = p[machine - 1][pi[job-1]]
+
+            c[machine][job] = max(lhs, rhs) + p_ij
+
+    # completion_time_if_next
+    c_next = zeros((c.shape[0]))
+    for machine in range(1, c_next.shape[0]):
+        lhs = c_next[machine - 1]
+        rhs = c[machine][-1]
+
+        p_ij = p[machine - 1][j]
+
+        c_next[machine] = max(lhs, rhs) + p_ij
+
+    # artificial_completion_time
+    c_a = zeros((c.shape[0]))
+    for machine in range(1, c_a.shape[0]):
+        lhs = c_a[machine - 1]
+        rhs = c_next[machine]
+        p_ia = artificial_processing_time(m, n, p, u, machine-1, j)
+
+        c_a[machine] = max(lhs, rhs) + p_ia
+
+    return c_a[-1]
 
 
 # Eq. 10
