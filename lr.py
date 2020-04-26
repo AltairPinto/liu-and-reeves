@@ -1,4 +1,4 @@
-from numpy import array, zeros
+from numpy import array, empty, empty_like, zeros, zeros_like
 
 
 # Eq. 2: Tempo total de conclusão
@@ -79,8 +79,29 @@ def index(m, n, p, pi, k, pi_j):
 
 
 def lr(m, n, p, x):
-    ranked = sorted(range(0, n), key=lambda j: index(m, n, p, range(0, n), 0, j))
+    # Passo 1: Rankear as tarefas
+    xi = empty((n))
+    c_k = empty((m))
+    c_kp1 = empty_like(c_k)
 
+    for j in range(0, n):
+        # $ C_{\pi_k} $
+        c_k[0] = p[0][j]
+        for i in range(1, c_k.shape[0]):
+            c_k[i] = c_k[i-1] + p[i][j]
+
+        # $ C_{\pi_{k+1}} $
+        c_kp1[0] = c_k[0] + artificial_processing_time(m, n, p, range(0,n), 0, 0, j)
+        for i in range(1, c_kp1.shape[0]):
+            p_ia = artificial_processing_time(m, n, p, range(0,n), 0, i, j)
+            c_kp1[i] = max(c_k[i], c_kp1[i-1]) + p_ia
+
+        # $ \xi(j, 0) = AT_{j k} $
+        xi[j] = c_k[-1] + c_kp1[-1]
+
+    ranked = sorted(range(0, n), key=xi.__getitem__)
+
+    # Passo 2: Gerar escalonamentos
     pis = []
 
     for pi_id in range(0, x):
@@ -96,6 +117,7 @@ def lr(m, n, p, x):
 
         pis.append(pi)
 
+    # Passo 3: Retornar escalonamento com menor tempo total de conclusão
     c_sum = [total_completion_time(m, n, p, pi) for pi in pis]
     best = min(range(x), key=c_sum.__getitem__)
     return pis[best]
