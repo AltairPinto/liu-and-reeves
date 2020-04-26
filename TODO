@@ -14,3 +14,7 @@ Block Swap pega dois blocos de tarefas, de respectivos tamanhos l e l', e troca-
 "inter-máquinas" = a troca acontece em máquinas diferentes.
 
 Dadas as restrições feitas pelo PFSSP, mudar tarefas de posição obriga-as as mudar de posição em todas as máquinas, devido à ordem estrita que existe entre as tarefas.  Portanto, só há sentido, nesse contexto, em falar das estruturas de vizinhança "l-Block Insertion" e "Block Swap".
+
+---
+
+Escrever RVND do Kramer, 2015 (p. 44, algoritmo 4).
