@@ -51,29 +51,29 @@ def index(m, n, p, pi, k, pi_j):
             c[i][j] = max(left, up) + proc_time
 
     # Eqs. 6 e 7: Tempo de conclusão da tarefa j se escalonada
-    c_kp1 = zeros((m+1), dtype=int)
-    for i in range(1, c_kp1.shape[0]):
-        left = c_kp1[i-1]
+    c_k = zeros((m+1), dtype=int)
+    for i in range(1, c_k.shape[0]):
+        left = c_k[i-1]
         up = c[i][-1]
         proc_time = p[i-1][pi_j]
-        c_kp1[i] = max(left, up) + proc_time
+        c_k[i] = max(left, up) + proc_time
 
     # Eq. 8 e 9: Tempo de conclusão da tarefa artificial
-    c_kp2 = zeros((m+1))
-    for i in range(1, c_kp2.shape[0]):
-        left = c_kp2[i-1]
-        up = c_kp1[i]
+    c_kp1 = zeros((m+1))
+    for i in range(1, c_kp1.shape[0]):
+        left = c_kp1[i-1]
+        up = c_k[i]
         proc_time = artificial_processing_time(m, n, p, pi, k, i-1, pi_j)
-        c_kp2[i] = max(left, up) + proc_time
+        c_kp1[i] = max(left, up) + proc_time
 
     # Eq. 3: Tempo total de ociosidade de máquina poderado
     it = 0.
     for i in range(1, m):
-        idle_time = max(c_kp1[i] - c[i+1][-1], 0)
+        idle_time = max(c_k[i] - c[i+1][-1], 0)
         it += weight(m, n, i, k) * idle_time
 
     # Eq. 10: Tempo total de conclusão artificial
-    at = c_kp1[-1] + c_kp2[-1]
+    at = c_k[-1] + c_kp1[-1]
 
     return (n-k-2)*it + at
 
