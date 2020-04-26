@@ -1,16 +1,14 @@
 import numpy as np
 from copy import copy
 
-def _l_block_insertion_forward(l, x):
+def _l_block_insertion(l, x):
     x = list(x)
-    for i in range(len(x)-l):
-
-        # FIXME: the backward iteration is buggy
-        for j in range(0, i+l+1):  # backward
-            print(x[i:i+l], x[:i], x[i+l:j], x[j:])
+    for i in range(len(x)+1-l):
+        for j in range(i):  # backward
+            yield x[:j] + x[i:i+l] + x[j:i] + x[i+l:]
 
         for j in range(i+l+1, len(x)+1):  #forward
-            print(x[:i], x[i+l:j], x[i:i+l], x[j:])
+            yield x[:i] + x[i+l:j] + x[i:i+l] + x[j:]
 
 def rvnd(p, x):
     pi = x
