@@ -83,11 +83,30 @@ def completion_time_if_next(
     if i < 0:
         return 0
 
-    lhs = completion_time(m, n, p, pi, i, len(pi)-1)
-    rhs = completion_time_if_next(m, n, p, pi, i-1, j)
-    p_ij = p[i*n + j]
+    # completion_time
+    c = [0] * ((i+2) * (len(pi)+1))
 
-    return max(lhs, rhs) + p_ij
+    k = len(pi)-1
+    for machine in range(1, i+2):
+        for job in range(1, k+2):
+            lhs = c[(machine - 1)*(k+2) + job]
+            rhs = c[machine*(k+2) + job - 1]
+
+            p_ij = p[(machine-1)*n + pi[job-1]]
+
+            c[machine*(k+2) + job] = max(lhs, rhs) + p_ij
+
+    # completion_time_if_next
+    c_next = [0] * (i+2)
+    for machine in range(1, i+2):
+        rhs = c_next[machine - 1]
+        lhs = c[(machine)*(k+2) + k+1]
+
+        p_ij = p[(machine-1)*n + j]
+
+        c_next[machine] = max(lhs, rhs) + p_ij
+
+    return c_next[-1]
 
 
 # Eq. 3
