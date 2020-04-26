@@ -35,41 +35,53 @@ def artificial_processing_time(m, n, p, pi, k, i, j):
 
 
 # Eq. 11
-def index(m, n, p, pi, k, pi_j):
-    # Eq. 1: Tempo de conclusão
+def index(m, n, p, pi, k, pi_u_j):
+    assert k >= 1
 
-    # XXX(staticagent): As primeiras linha e coluna são inutilizadas, e estão
-    # preenchidas com 0 para servir como dummies na comparação feita por max.
-    # Existe um modo de utilizar esse conhecimento para diminuir ainda mais o
-    # consumo de memória, mas, no momento, eu tenho que otimizar outras funções.
-    c = zeros((m+1, k+1), dtype=int)
+    # Eq. 1: Tempo de conclusão
+    c = empty((m, k), dtype=int)
+
+    # $ C(0, \pi_s(0)) = p(0, \pi_s(0)) $
+    c[0][0] = p[0][pi[0]]
+
+    # $ C(i, \pi_s(0)) = C(i-1, \pi_s(0)) + p(i, \pi_s(0)) $
+    for i in range(1, c.shape[0]):
+        c[i][0] = c[i-1][0] + p[i][pi[0]]
+
+    # $ C(0, \pi_s(j)) = C(0, \pi_s(j-1)) + p(0, \pi_s(j)) $
+    for j in range(1, c.shape[1]):
+       c[0][j] = c[0][j-1] + p[0][pi[j]]
+
+    # $ C(i, \pi_s(j)) = \max \left\{ C(i, \pi_s(j-1)) + C(i-1, \pi_s(j)) \right\} + p(i, \pi_s(j)) $
     for i in range(1, c.shape[0]):
         for j in range(1, c.shape[1]):
-            left = c[i-1][j]
-            up = c[i][j-1]
-            proc_time = p[i-1][pi[j-1]]
-            c[i][j] = max(left, up) + proc_time
+            c[i][j] = max(c[i][j-1], c[i-1][j]) + p[i][pi[j]]
 
     # Eqs. 6 e 7: Tempo de conclusão da tarefa j se escalonada
-    c_k = zeros((m+1), dtype=int)
+    c_k = empty((m), dtype=int)
+
+    # $ C(0, \pi_u(j)) = C(0, \pi_s(k-1)) + p(0, \pi_u(j)) $
+    c_k[0] = c[0][-1] + p[0][pi_u_j]
+
+    # $ C(i, \pi_u(j)) = \max \left\{ C(i, \pi_s(k-1)), C(i-1, \pi_u(j)) \right\} + p(i, \pi_u(j)) $
     for i in range(1, c_k.shape[0]):
-        left = c_k[i-1]
-        up = c[i][-1]
-        proc_time = p[i-1][pi_j]
-        c_k[i] = max(left, up) + proc_time
+        c_k[i] = max(c[i][-1], c_k[i-1]) + p[i][pi_u_j]
 
     # Eq. 8 e 9: Tempo de conclusão da tarefa artificial
-    c_kp1 = zeros((m+1))
+    c_kp1 = empty((m))
+
+    # $ C(0, \pi_a) = C(0, \pi_u(j)) + p(0, \pi_a) $
+    c_kp1[0] = c_kp1[0] + artificial_processing_time(m, n, p, pi, k, 0, pi_u_j)
+
+    # $ C(i, \pi_a) = \max \left\{ C(i, \pi_u(j)), C(i-1, \pi_a) \right\} + p(i, \pi_a) $
     for i in range(1, c_kp1.shape[0]):
-        left = c_kp1[i-1]
-        up = c_k[i]
-        proc_time = artificial_processing_time(m, n, p, pi, k, i-1, pi_j)
-        c_kp1[i] = max(left, up) + proc_time
+        p_ia = artificial_processing_time(m, n, p, pi, k, i, pi_u_j)
+        c_kp1[i] = max(c_k[i], c_kp1[i-1]) + p_ia
 
     # Eq. 3: Tempo total de ociosidade de máquina poderado
     it = 0.
     for i in range(1, m):
-        idle_time = max(c_k[i] - c[i+1][-1], 0)
+        idle_time = max(c_k[i-1] - c[i][-1], 0)
         it += weight(m, n, i, k) * idle_time
 
     # Eq. 10: Tempo total de conclusão artificial
