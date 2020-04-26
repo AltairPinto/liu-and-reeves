@@ -34,62 +34,6 @@ def artificial_processing_time(m, n, p, pi, k, i, j):
     return p_a / (n-k-1)
 
 
-# Eq. 11
-def index(m, n, p, pi, k, pi_u_j):
-    assert k >= 1
-
-    # Eq. 1: Tempo de conclusão
-    c = empty((m, k), dtype=int)
-
-    # $ C(0, \pi_s(0)) = p(0, \pi_s(0)) $
-    c[0][0] = p[0][pi[0]]
-
-    # $ C(i, \pi_s(0)) = C(i-1, \pi_s(0)) + p(i, \pi_s(0)) $
-    for i in range(1, c.shape[0]):
-        c[i][0] = c[i-1][0] + p[i][pi[0]]
-
-    # $ C(0, \pi_s(j)) = C(0, \pi_s(j-1)) + p(0, \pi_s(j)) $
-    for j in range(1, c.shape[1]):
-       c[0][j] = c[0][j-1] + p[0][pi[j]]
-
-    # $ C(i, \pi_s(j)) = \max \left\{ C(i, \pi_s(j-1)) + C(i-1, \pi_s(j)) \right\} + p(i, \pi_s(j)) $
-    for i in range(1, c.shape[0]):
-        for j in range(1, c.shape[1]):
-            c[i][j] = max(c[i][j-1], c[i-1][j]) + p[i][pi[j]]
-
-    # Eqs. 6 e 7: Tempo de conclusão da tarefa j se escalonada
-    c_k = empty((m), dtype=int)
-
-    # $ C(0, \pi_u(j)) = C(0, \pi_s(k-1)) + p(0, \pi_u(j)) $
-    c_k[0] = c[0][-1] + p[0][pi_u_j]
-
-    # $ C(i, \pi_u(j)) = \max \left\{ C(i, \pi_s(k-1)), C(i-1, \pi_u(j)) \right\} + p(i, \pi_u(j)) $
-    for i in range(1, c_k.shape[0]):
-        c_k[i] = max(c[i][-1], c_k[i-1]) + p[i][pi_u_j]
-
-    # Eq. 8 e 9: Tempo de conclusão da tarefa artificial
-    c_kp1 = empty((m))
-
-    # $ C(0, \pi_a) = C(0, \pi_u(j)) + p(0, \pi_a) $
-    c_kp1[0] = c_kp1[0] + artificial_processing_time(m, n, p, pi, k, 0, pi_u_j)
-
-    # $ C(i, \pi_a) = \max \left\{ C(i, \pi_u(j)), C(i-1, \pi_a) \right\} + p(i, \pi_a) $
-    for i in range(1, c_kp1.shape[0]):
-        p_ia = artificial_processing_time(m, n, p, pi, k, i, pi_u_j)
-        c_kp1[i] = max(c_k[i], c_kp1[i-1]) + p_ia
-
-    # Eq. 3: Tempo total de ociosidade de máquina poderado
-    it = 0.
-    for i in range(1, m):
-        idle_time = max(c_k[i-1] - c[i][-1], 0)
-        it += weight(m, n, i, k) * idle_time
-
-    # Eq. 10: Tempo total de conclusão artificial
-    at = c_k[-1] + c_kp1[-1]
-
-    return (n-k-2)*it + at
-
-
 def lr(m, n, p, x):
     # Passo 1: Rankear as tarefas
     xi = empty((n))
@@ -97,18 +41,22 @@ def lr(m, n, p, x):
     c_kp1 = empty_like(c_k)
 
     for j in range(0, n):
-        # $ C_{\pi_k} $
+        # $ C(0, \pi_u(j)) = p(0, \pi_u(j)) $
         c_k[0] = p[0][j]
+
+        # $ C(i, \pi_u(j)) = C(i-1, \pi_u(j)) + p(i, \pi_u(j)) $
         for i in range(1, c_k.shape[0]):
             c_k[i] = c_k[i-1] + p[i][j]
 
-        # $ C_{\pi_{k+1}} $
+        # $ C(0, \pi_a) = C(0, \pi_u(j)) + p(0, \pi_a) $
         c_kp1[0] = c_k[0] + artificial_processing_time(m, n, p, range(0,n), 0, 0, j)
+
+        # $ C(i, \pi_a) = \max \left\{ C(i, \pi_u(j)), C(i-1, \pi_a) \right\} + p(i, \pi_a) $
         for i in range(1, c_kp1.shape[0]):
             p_ia = artificial_processing_time(m, n, p, range(0,n), 0, i, j)
             c_kp1[i] = max(c_k[i], c_kp1[i-1]) + p_ia
 
-        # $ \xi(j, 0) = AT_{j k} $
+        # $ \xi(j, 0) = AT(j, k) $
         xi[j] = c_k[-1] + c_kp1[-1]
 
     ranked = sorted(range(0, n), key=xi.__getitem__)
@@ -122,10 +70,62 @@ def lr(m, n, p, x):
         pi_0 = ranked[pi_id]
         pi[0], pi[pi_0] = pi[pi_0], pi[0]
 
+        # Eq. 1: Tempo de conclusão
+        c = empty((m, n), dtype=int)
+
+        # $ C(0, \pi_s(0)) = p(0, \pi_s(0)) $
+        c[0][0] = p[0][pi[0]]
+
+        # $ C(i, \pi_s(0)) = C(i-1, \pi_s(0)) + p(i, \pi_s(0)) $
+        for i in range(1, c.shape[0]):
+            c[i][0] = c[i-1][0] + p[i][pi[0]]
+
         for k in range(1, n-1):
-            xi = [index(m, n, p, pi, k, j) for j in pi[k:n]]
-            pi_k = k + min(range(n-k), key=xi.__getitem__)
-            pi[k], pi[pi_k] = pi[pi_k], pi[k]
+            pi_u = pi[k:n]
+
+            xi = empty((n-k))
+            for j in range(xi.shape[0]):
+                # Eqs. 6 e 7: Tempo de conclusão da tarefa j se escalonada
+                c_k = empty((m), dtype=int)
+
+                # $ C(0, \pi_u(j)) = C(0, \pi_s(k-1)) + p(0, \pi_u(j)) $
+                c_k[0] = c[0][k-1] + p[0][pi_u[j]]
+
+                # $ C(i, \pi_u(j)) = \max \left\{ C(i, \pi_s(k-1)), C(i-1, \pi_u(j)) \right\} + p(i, \pi_u(j)) $
+                for i in range(1, c_k.shape[0]):
+                    c_k[i] = max(c[i][k-1], c_k[i-1]) + p[i][pi_u[j]]
+
+                # Eq. 8 e 9: Tempo de conclusão da tarefa artificial
+                c_kp1 = empty((m))
+
+                # $ C(0, \pi_a) = C(0, \pi_u(j)) + p(0, \pi_a) $
+                c_kp1[0] = c_kp1[0] + artificial_processing_time(m, n, p, pi, k, 0, pi_u[j])
+
+                # $ C(i, \pi_a) = \max \left\{ C(i, \pi_u(j)), C(i-1, \pi_a) \right\} + p(i, \pi_a) $
+                for i in range(1, c_kp1.shape[0]):
+                    p_ia = artificial_processing_time(m, n, p, pi, k, i, pi_u[j])
+                    c_kp1[i] = max(c_k[i], c_kp1[i-1]) + p_ia
+
+                # Eq. 3: Tempo total de ociosidade de máquina poderado
+                it = 0.
+                for i in range(1, m):
+                    idle_time = max(c_k[i-1] - c[i][k-1], 0)
+                    it += weight(m, n, i, k) * idle_time
+
+                # Eq. 10: Tempo total de conclusão artificial
+                at = c_k[-1] + c_kp1[-1]
+
+                xi[j] = (n-k-2)*it + at
+
+            pi_s_k = k + min(range(n-k), key=xi.__getitem__)
+            pi[k], pi[pi_s_k] = pi[pi_s_k], pi[k]
+
+            # $ C(0, \pi_s(k)) = C(0, \pi_s(k-1)) + p(0, \pi_s(k)) $
+            c[0][k] = c[0][k-1] + p[0][pi[k]]
+
+            # $ C(i, \pi_s(k)) = \max \left\{ C(i, \pi_s(k-1)) + C(i-1, \pi_s(k)) \right\} + p(i, \pi_s(k)) $
+            for i in range(1, c.shape[0]):
+                c[i][k] = max(c[i][k-1], c[i-1][k]) + p[i][pi[k]]
 
         pis.append(pi)
 
