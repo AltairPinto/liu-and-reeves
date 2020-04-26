@@ -1,8 +1,17 @@
 from pc import ils, _c_sum
-from taillard1990 import ta001
+import taillard1990
 
 instances = {
-    'ta001': ta001
+    'ta001': taillard1990.ta001,
+    'ta002': taillard1990.ta002,
+    'ta003': taillard1990.ta003,
+    'ta004': taillard1990.ta004,
+    'ta005': taillard1990.ta005,
+    'ta006': taillard1990.ta006,
+    'ta007': taillard1990.ta007,
+    'ta008': taillard1990.ta008,
+    'ta009': taillard1990.ta009,
+    'ta010': taillard1990.ta010,
 }
 
 for name, instance in instances.items():
