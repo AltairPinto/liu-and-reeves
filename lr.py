@@ -1,4 +1,3 @@
-from typing import List, Sequence
 from numpy import array, zeros
 
 
@@ -10,14 +9,12 @@ def total_completion_time(m, n, p, pi):
     # consumo de memória, mas, no momento, eu tenho que otimizar outras funções.
     c = zeros((m+1, n+1))
 
-    for machine in range(1, c.shape[0]):
-        for job in range(1, c.shape[1]):
-            lhs = c[machine - 1][job]
-            rhs = c[machine][job - 1]
-
-            p_ij = p[machine - 1][pi[job-1]]
-
-            c[machine][job] = max(lhs, rhs) + p_ij
+    for i in range(1, c.shape[0]):
+        for j in range(1, c.shape[1]):
+            left = c[i-1][j]
+            up = c[i][j-1]
+            proc_time = p[i-1][pi[j-1]]
+            c[i][j] = max(left, up) + proc_time
 
     return c[-1][-1]
 
@@ -38,7 +35,7 @@ def artificial_processing_time(m, n, p, pi, k, i, j):
 
 
 # Eq. 11
-def index(m, n, p, pi, k, j):
+def index(m, n, p, pi, k, pi_j):
     # Eq. 1: Tempo de conclusão
 
     # XXX(staticagent): As primeiras linha e coluna são inutilizadas, e estão
@@ -46,43 +43,37 @@ def index(m, n, p, pi, k, j):
     # Existe um modo de utilizar esse conhecimento para diminuir ainda mais o
     # consumo de memória, mas, no momento, eu tenho que otimizar outras funções.
     c = zeros((m+1, k+1))
-
-    for machine in range(1, c.shape[0]):
-        for job in range(1, c.shape[1]):
-            lhs = c[machine - 1][job]
-            rhs = c[machine][job - 1]
-
-            p_ij = p[machine - 1][pi[job-1]]
-
-            c[machine][job] = max(lhs, rhs) + p_ij
+    for i in range(1, c.shape[0]):
+        for j in range(1, c.shape[1]):
+            left = c[i-1][j]
+            up = c[i][j-1]
+            proc_time = p[i-1][pi[j-1]]
+            c[i][j] = max(left, up) + proc_time
 
     # Eqs. 6 e 7: Tempo de conclusão da tarefa j se escalonada
-    c_next = zeros((c.shape[0]))
-    for machine in range(1, c_next.shape[0]):
-        rhs = c_next[machine - 1]
-        lhs = c[machine][-1]
+    c_kp1 = zeros((m+1))
+    for i in range(1, c_kp1.shape[0]):
+        left = c_kp1[i-1]
+        up = c[i][-1]
+        proc_time = p[i-1][pi_j]
+        c_kp1[i] = max(left, up) + proc_time
 
-        p_ij = p[machine - 1][j]
-
-        c_next[machine] = max(lhs, rhs) + p_ij
+    # Eq. 8 e 9: Tempo de conclusão da tarefa artificial
+    c_kp2 = zeros((m+1))
+    for i in range(1, c_kp2.shape[0]):
+        left = c_kp2[i-1]
+        up = c_kp1[i]
+        proc_time = artificial_processing_time(m, n, p, pi, k, i-1, pi_j)
+        c_kp2[i] = max(left, up) + proc_time
 
     # Eq. 3: Tempo total de ociosidade de máquina poderado
     it = 0.
     for i in range(1, m):
-        idle_time = max(c_next[i] - c[i+1][-1], 0)
+        idle_time = max(c_kp1[i] - c[i+1][-1], 0)
         it += weight(m, n, i, k) * idle_time
 
-    # Eq. 8 e 9: Tempo de conclusão da tarefa artificial
-    c_a = zeros((c.shape[0]))
-    for machine in range(1, c_a.shape[0]):
-        lhs = c_a[machine - 1]
-        rhs = c_next[machine]
-        p_ia = artificial_processing_time(m, n, p, pi, k, machine-1, j)
-
-        c_a[machine] = max(lhs, rhs) + p_ia
-
     # Eq. 10: Tempo total de conclusão artificial
-    at = c_next[-1] + c_a[-1]
+    at = c_kp1[-1] + c_kp2[-1]
 
     return (n-k-2)*it + at
 
@@ -90,24 +81,24 @@ def index(m, n, p, pi, k, j):
 def lr(m, n, p, x):
     ranked = sorted(range(0, n), key=lambda j: index(m, n, p, range(0, n), 0, j))
 
-    S = []
+    pis = []
 
-    for _ in range(0, x):
+    for pi_id in range(0, x):
         pi = list(range(0, n))
 
-        best = ranked.pop(0)
-        pi[0], pi[best] = pi[best], pi[0]
+        pi_0 = ranked[pi_id]
+        pi[0], pi[pi_0] = pi[pi_0], pi[0]
 
         for k in range(1, n-1):
             xi = [index(m, n, p, pi, k, j) for j in pi[k:n]]
-            best = min(range(n-k), key=xi.__getitem__)
-            pi[k], pi[k+best] = pi[k+best], pi[k]
+            pi_k = k + min(range(n-k), key=xi.__getitem__)
+            pi[k], pi[pi_k] = pi[pi_k], pi[k]
 
-        S.append(pi)
+        pis.append(pi)
 
-    c_sum = [total_completion_time(m, n, p, seq) for seq in S]
+    c_sum = [total_completion_time(m, n, p, pi) for pi in pis]
     best = min(range(x), key=c_sum.__getitem__)
-    return S[best]
+    return pis[best]
 
 
 # dados para teste - ta001
