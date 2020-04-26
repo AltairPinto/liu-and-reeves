@@ -1,20 +1,21 @@
-from numpy import array, empty, empty_like, zeros, zeros_like
+from numpy import array, empty, empty_like
 
 
 # Eq. 2: Tempo total de conclusão
 def total_completion_time(m, n, p, pi):
-    # XXX(staticagent): As primeiras linha e coluna são inutilizadas, e estão
-    # preenchidas com 0 para servir como dummies na comparação feita por max.
-    # Existe um modo de utilizar esse conhecimento para diminuir ainda mais o
-    # consumo de memória, mas, no momento, eu tenho que otimizar outras funções.
-    c = zeros((m+1, n+1), dtype=int)
+    c = empty((m, n), dtype=int)
+
+    c[0][0] = p[0][pi[0]]
+
+    for i in range(1, c.shape[0]):
+        c[i][0] = c[i-1][0] + p[i][pi[0]]
+
+    for j in range(1, c.shape[1]):
+        c[0][j] = c[0][j-1] + p[0][pi[j]]
 
     for i in range(1, c.shape[0]):
         for j in range(1, c.shape[1]):
-            left = c[i-1][j]
-            up = c[i][j-1]
-            proc_time = p[i-1][pi[j-1]]
-            c[i][j] = max(left, up) + proc_time
+            c[i][j] = max(c[i][j-1], c[i-1][j]) + p[i][pi[j]]
 
     return c[-1][-1]
 
