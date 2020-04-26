@@ -117,10 +117,10 @@ def job_interchange_ls(m, n, p, pi, iter_max):
 def shake(pi):
     pi_shaken = copy(pi)
 
-    # Num de tarefas a ser perturbado
-    n_jobs = randint(1, len(pi))
+    # Num de movimentos
+    n_moves = randint(3, 5)
 
-    for _ in range(0, n_jobs):
+    for _ in range(0, n_moves):
         # Tarefas a serem trocadas de lugar
         i = randint(0, len(pi)-1)
         j = randint(0, len(pi)-1)
