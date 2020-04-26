@@ -1,0 +1,16 @@
+Na dissertação de Kramer, existem 4 tipos de estruturas de vizinhança:
+
+1. l-Block Insertion intra-máquina
+2. Block Swap intra-máquina
+3. l-Block Insertion inter-máquinas
+4. Block Swap inter-máquinas
+
+l-Block Insertion pega um bloco de tarefas de tamanho l e muda-o de lugar, para frente ou para trás.
+
+Block Swap pega dois blocos de tarefas, de respectivos tamanhos l e l', e troca-os de posição.
+
+"intra-máquina" = a troca acontece na mesma máquina.
+
+"inter-máquinas" = a troca acontece em máquinas diferentes.
+
+Dadas as restrições feitas pelo PFSSP, mudar tarefas de posição obriga-as as mudar de posição em todas as máquinas, devido à ordem estrita que existe entre as tarefas.  Portanto, só há sentido, nesse contexto, em falar das estruturas de vizinhança "l-Block Insertion" e "Block Swap".
