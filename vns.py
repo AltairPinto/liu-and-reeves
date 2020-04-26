@@ -19,7 +19,29 @@ def total_completion_time(m, n, p, pi):
     return c[-1][-1]
 
 
-def vns(x, k_max, iter_max):
+# Algorithm 1
+def neighborhood_change(m, n, p, x, x_prime, k):
+    if total_completion_time(m, n, p, x_prime) < total_completion_time(m, n, p, x):
+        return x_prime, 1
+    else:
+        return x, k+1
+
+
+def vns(m, n, p, x, k_max, iter_max):
+    # FIXME: trocar iterações por tempo de CPU?
+    # FIXME: o número de iterações deve zerar se houver uma melhora
+    for t in range(0, iter_max):
+        k = 1
+
+        while k < k_max:
+            # TODO: shake
+
+            # TODO: local_optimum (via local search)
+            x_prime = x
+
+            # Mudança de vizinhança
+            x, k = neighborhood_change(m, n, p, x, x_prime, k)
+
     return x
 
 m = 5
@@ -37,6 +59,6 @@ x = [2, 16, 8, 14, 13, 15, 5, 18, 12, 6, 11, 10, 7, 1, 0, 19, 3, 9, 4, 17]
 k_max = 1
 iter_max = 1000
 
-res = vns(x, k_max, iter_max)
+res = vns(m, n, p, x, k_max, iter_max)
 print(res)
 print(total_completion_time(m, n, p, res))
