@@ -1,3 +1,5 @@
+from copy import copy
+from random import randint
 from numpy import array, empty
 
 # função objetivo
@@ -18,31 +20,140 @@ def total_completion_time(m, n, p, pi):
 
     return c[-1][-1]
 
+def insert(pi, i, j):
+    tmp = copy(pi)
+    elem = tmp.pop(i)
+    tmp.insert(j, elem)
+    return tmp
 
 # Algorithm 1
-def neighborhood_change(m, n, p, x, x_prime, k):
-    if total_completion_time(m, n, p, x_prime) < total_completion_time(m, n, p, x):
-        return x_prime, 1
-    else:
-        return x, k+1
+def job_insert(m, n, p, pi, i):
+    c_sum = total_completion_time(m, n, p, pi)
 
+    for j in range(0, n):
+        if i == j:
+            continue
+        candidate = insert(pi, i, j)
+        if total_completion_time(m, n, p, candidate) < c_sum:
+            return candidate
 
-def vns(m, n, p, x, k_max, iter_max):
-    # FIXME: trocar iterações por tempo de CPU?
-    # FIXME: o número de iterações deve zerar se houver uma melhora
-    for t in range(0, iter_max):
-        k = 1
+    return pi
 
-        while k < k_max:
-            # TODO: shake
+# Algorithm 2
+def interchange(m, n, p, pi, i):
+    c_sum = total_completion_time(m, n, p, pi)
+    candidate = copy(pi)
 
-            # TODO: local_optimum (via local search)
-            x_prime = x
+    for j in range(i+1, n):
+        # troca
+        candidate[i], candidate[j] = candidate[j], candidate[i]
 
-            # Mudança de vizinhança
-            x, k = neighborhood_change(m, n, p, x, x_prime, k)
+        if total_completion_time(m, n, p, candidate) < c_sum:
+            return candidate
 
-    return x
+        # destroca
+        candidate[i], candidate[j] = candidate[j], candidate[i]
+
+    return pi
+
+# Algorithm 3
+def reduced_ji(m, n, p, pi):
+    improve = False
+    new_pi = copy(pi)
+    c_sum = total_completion_time(m, n, p, pi)
+
+    for i in range(0, n):
+        candidate = job_insert(m, n, p, pi, i)
+        new_c_sum = total_completion_time(m, n, p, candidate)
+        if new_c_sum < c_sum:
+            improve = True
+            new_pi = copy(candidate)
+            c_sum = new_c_sum
+
+    return improve, new_pi
+
+# Algorithm 4
+def reduced_interchange(m, n, p, pi):
+    improve = False
+    new_pi = copy(pi)
+    c_sum = total_completion_time(m, n, p, pi)
+
+    for i in range(0, n):
+        candidate = interchange(m, n, p, pi, i)
+        new_c_sum = total_completion_time(m, n, p, candidate)
+        if new_c_sum < c_sum:
+            improve = True
+            new_pi = copy(candidate)
+            c_sum = new_c_sum
+
+    return improve, new_pi
+
+# Algorithm 5
+def job_insert_ls(m, n, p, pi, iter_max):
+    new_pi = pi
+
+    # FIXME: mudar iter_max para ser tempo de CPU máximo
+    for i in range(0, iter_max):
+        condition, new_pi = reduced_ji(m, n, p, new_pi)
+        if not condition:
+            # Não houve melhora
+            break
+
+    return new_pi
+
+# Algorithm 6
+def job_interchange_ls(m, n, p, pi, iter_max):
+    new_pi = pi
+
+    # FIXME: mudar iter_max para ser tempo de CPU máximo
+    for i in range(0, iter_max):
+        condition, new_pi = reduced_interchange(m, n, p, new_pi)
+        if not condition:
+            # Não houve melhora
+            break
+
+    return new_pi
+
+def shake(pi):
+    pi_shaken = copy(pi)
+
+    # Num de tarefas a ser perturbado
+    n_jobs = randint(1, len(pi))
+
+    for _ in range(0, n_jobs):
+        # Tarefas a serem trocadas de lugar
+        i = randint(0, len(pi)-1)
+        j = randint(0, len(pi)-1)
+
+        pi_shaken[i], pi_shaken[j] = pi_shaken[j], pi_shaken[i]
+
+    return pi_shaken
+
+def vns4(m, n, p, x, k_max, iter_max):
+    pi = x
+    best_solution = pi
+
+    # FIXME: trocar número de iterações por tempo de CPU
+    for _ in range(0, iter_max):
+        condition = True
+
+        # FIXME: trocar número de iterações por tempo de CPU
+        for _ in range(0, iter_max):
+            pi = job_interchange_ls(m, n, p, pi, iter_max)
+            condition, pi = reduced_ji(m, n, p, pi)
+
+            if not condition:
+                # Não houve melhora
+                break
+
+        if total_completion_time(m, n, p, pi) < total_completion_time(m, n, p, best_solution):
+            best_solution = pi
+
+        pi = best_solution
+
+        pi = shake(pi)
+    return best_solution
+
 
 m = 5
 n = 20
@@ -56,9 +167,9 @@ p = array([
 # Resultado dado por LR(1)
 x = [2, 16, 8, 14, 13, 15, 5, 18, 12, 6, 11, 10, 7, 1, 0, 19, 3, 9, 4, 17]
 
-k_max = 1
-iter_max = 1000
+k_max = 5
+iter_max = 10
 
-res = vns(m, n, p, x, k_max, iter_max)
+res = vns4(m, n, p, x, k_max, iter_max)
 print(res)
 print(total_completion_time(m, n, p, res))
