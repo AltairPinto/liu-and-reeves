@@ -14,14 +14,22 @@ def completion_time(
     assert len(pi) <= n
     assert len(p) == m*n
 
-    if i < 0 or j < 0:
-        return 0
+    # XXX(staticagent): As primeiras linha e coluna são inutilizadas, e estão
+    # preenchidas com 0 para servir como dummies na comparação feita por max.
+    # Existe um modo de utilizar esse conhecimento para diminuir ainda mais o
+    # consumo de memória, mas, no momento, eu tenho que otimizar outras funções.
+    c = [0] * ((i+2) * (j+2))
 
-    lhs = completion_time(m, n, p, pi, i, j-1)
-    rhs = completion_time(m, n, p, pi, i-1, j)
-    pi_j = pi[j]
-    return max(lhs, rhs) + p[i*n + pi_j]
+    for machine in range(1, i+2):
+        for job in range(1, j+2):
+            lhs = c[(machine - 1)*(j+2) + job]
+            rhs = c[machine*(j+2) + job - 1]
 
+            p_ij = p[(machine-1)*n + pi[job-1]]
+
+            c[machine*(j+2) + job] = max(lhs, rhs) + p_ij
+
+    return c[-1]
 
 # Eq. 2
 def total_completion_time(
@@ -218,3 +226,4 @@ p = [
         16, 89, 49, 15, 89, 45, 60, 23, 57, 64,  7,  1, 63, 41, 63, 47, 26, 75, 77, 40,
         66, 58, 31, 68, 78, 91, 13, 59, 49, 85, 85,  9, 39, 41, 56, 40, 54, 77, 51, 31,
         58, 56, 20, 85, 53, 35, 53, 41, 69, 13, 86, 72,  8, 49, 47, 87, 58, 18, 68, 28]
+print(lr(m, n, p, 1))
