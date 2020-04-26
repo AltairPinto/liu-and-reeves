@@ -40,11 +40,18 @@ def total_completion_time(
     assert len(p) == m*n
     assert len(pi) == n
 
-    c_sum = 0
-    for j in range(0, n):
-        c_sum += completion_time(m, n, p, pi, m-1, j)
-    return c_sum
+    # XXX(staticagent): O mesmo comentário em completion_time aplica-se aqui.
+    c = [0] * ((m+1) * (n+1))
 
+    for machine in range(1, m+1):
+        for job in range(1, n+1):
+            lhs = c[(machine - 1)*(n+1) + job]
+            rhs = c[machine*(n+1) + job - 1]
+            p_ij = p[(machine-1)*n + pi[job-1]]
+
+            c[machine*(n+1) + job] = max(lhs, rhs) + p_ij
+
+    return c[-1]
 
 # Eq. 4
 def weight(
@@ -226,4 +233,4 @@ p = [
         16, 89, 49, 15, 89, 45, 60, 23, 57, 64,  7,  1, 63, 41, 63, 47, 26, 75, 77, 40,
         66, 58, 31, 68, 78, 91, 13, 59, 49, 85, 85,  9, 39, 41, 56, 40, 54, 77, 51, 31,
         58, 56, 20, 85, 53, 35, 53, 41, 69, 13, 86, 72,  8, 49, 47, 87, 58, 18, 68, 28]
-print(lr(m, n, p, 1))
+print(lr(m, n, p, 1) == [2, 16, 8, 14, 13, 15, 5, 18, 12, 6, 11, 10, 7, 1, 0, 19, 3, 9, 4, 17])
