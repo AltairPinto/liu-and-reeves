@@ -7,7 +7,7 @@ def total_completion_time(m, n, p, pi):
     # preenchidas com 0 para servir como dummies na comparação feita por max.
     # Existe um modo de utilizar esse conhecimento para diminuir ainda mais o
     # consumo de memória, mas, no momento, eu tenho que otimizar outras funções.
-    c = zeros((m+1, n+1))
+    c = zeros((m+1, n+1), dtype=int)
 
     for i in range(1, c.shape[0]):
         for j in range(1, c.shape[1]):
@@ -42,7 +42,7 @@ def index(m, n, p, pi, k, pi_j):
     # preenchidas com 0 para servir como dummies na comparação feita por max.
     # Existe um modo de utilizar esse conhecimento para diminuir ainda mais o
     # consumo de memória, mas, no momento, eu tenho que otimizar outras funções.
-    c = zeros((m+1, k+1))
+    c = zeros((m+1, k+1), dtype=int)
     for i in range(1, c.shape[0]):
         for j in range(1, c.shape[1]):
             left = c[i-1][j]
@@ -51,7 +51,7 @@ def index(m, n, p, pi, k, pi_j):
             c[i][j] = max(left, up) + proc_time
 
     # Eqs. 6 e 7: Tempo de conclusão da tarefa j se escalonada
-    c_kp1 = zeros((m+1))
+    c_kp1 = zeros((m+1), dtype=int)
     for i in range(1, c_kp1.shape[0]):
         left = c_kp1[i-1]
         up = c[i][-1]
