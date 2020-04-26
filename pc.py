@@ -47,7 +47,7 @@ def _c_sum(p, pi):
         for j in range(1, c.shape[1]):
             c[i][j] += max(c[i-1][j], c[i][j-1])
 
-    return c[-1][-1]
+    return np.sum(c[:,-1])
 
 def _ff(p, x, a=4., b=1.):
     n, m = p.shape
