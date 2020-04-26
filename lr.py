@@ -2,28 +2,12 @@ from typing import List, Sequence
 from numpy import array, zeros
 
 
-# Eq. 1
-def completion_time(m, n, p, pi, i, j):
+# Eq. 2: Tempo total de conclusão
+def total_completion_time(m, n, p, pi):
     # XXX(staticagent): As primeiras linha e coluna são inutilizadas, e estão
     # preenchidas com 0 para servir como dummies na comparação feita por max.
     # Existe um modo de utilizar esse conhecimento para diminuir ainda mais o
     # consumo de memória, mas, no momento, eu tenho que otimizar outras funções.
-    c = zeros((i+2, j+2))
-
-    for machine in range(1, c.shape[0]):
-        for job in range(1, c.shape[1]):
-            lhs = c[machine - 1][job]
-            rhs = c[machine][job - 1]
-
-            p_ij = p[machine - 1][pi[job-1]]
-
-            c[machine][job] = max(lhs, rhs) + p_ij
-
-    return c[-1][-1]
-
-# Eq. 2
-def total_completion_time(m, n, p, pi):
-    # XXX(staticagent): O mesmo comentário em completion_time aplica-se aqui.
     c = zeros((m+1, n+1))
 
     for machine in range(1, c.shape[0]):
@@ -37,72 +21,13 @@ def total_completion_time(m, n, p, pi):
 
     return c[-1][-1]
 
-# Eq. 4
+
+# Eq. 4: Peso
 def weight(m, n, i, k):
     return m / (i + k*(m - i - 1)/(float)(n - 2)+1)
 
 
-# Eqs. 6 and 7
-def completion_time_if_next(m, n, p, pi, i, j):
-    # completion_time
-    c = zeros((i+2, len(pi)+1))
-
-    for machine in range(1, c.shape[0]):
-        for job in range(1, c.shape[1]):
-            lhs = c[machine - 1][job]
-            rhs = c[machine][job - 1]
-
-            p_ij = p[machine - 1][pi[job-1]]
-
-            c[machine][job] = max(lhs, rhs) + p_ij
-
-    # completion_time_if_next
-    c_next = zeros((i+2))
-    for machine in range(1, c_next.shape[0]):
-        rhs = c_next[machine - 1]
-        lhs = c[machine][-1]
-
-        p_ij = p[machine - 1][j]
-
-        c_next[machine] = max(lhs, rhs) + p_ij
-
-    return c_next[-1]
-
-
-# Eq. 3
-def weighted_total_machine_idle_time(m, n, p, pi, j):
-    # completion_time
-    c = zeros((m+1, len(pi)+1))
-
-    for machine in range(1, c.shape[0]):
-        for job in range(1, c.shape[1]):
-            lhs = c[machine - 1][job]
-            rhs = c[machine][job - 1]
-
-            p_ij = p[machine - 1][pi[job-1]]
-
-            c[machine][job] = max(lhs, rhs) + p_ij
-
-    # completion_time_if_next
-    c_next = zeros((c.shape[0]))
-    for machine in range(1, c_next.shape[0]):
-        rhs = c_next[machine - 1]
-        lhs = c[machine][-1]
-
-        p_ij = p[machine - 1][j]
-
-        c_next[machine] = max(lhs, rhs) + p_ij
-
-    it = 0.
-
-    for i in range(1, m):
-        idle_time = max(c_next[i] - c[i+1][-1], 0)
-        it += weight(m, n, i, len(pi)) * idle_time
-
-    return it
-
-
-# Eq. 5
+# Eq. 5: Tempo de processamento da tarefa artificial
 def artificial_processing_time(m, n, p, u, i, j):
     p_a = 0.
     for q in u:
@@ -112,82 +37,54 @@ def artificial_processing_time(m, n, p, u, i, j):
 
     return p_a / (len(u) - 1)
 
-# Eqs. 8 and 9
-def artificial_completion_time(m, n, p, pi, u, i, j):
-    # completion_time
-    c = zeros((m+1, len(pi)+1))
-
-    for machine in range(1, c.shape[0]):
-        for job in range(1, c.shape[1]):
-            lhs = c[machine - 1][job]
-            rhs = c[machine][job - 1]
-
-            p_ij = p[machine - 1][pi[job-1]]
-
-            c[machine][job] = max(lhs, rhs) + p_ij
-
-    # completion_time_if_next
-    c_next = zeros((c.shape[0]))
-    for machine in range(1, c_next.shape[0]):
-        lhs = c_next[machine - 1]
-        rhs = c[machine][-1]
-
-        p_ij = p[machine - 1][j]
-
-        c_next[machine] = max(lhs, rhs) + p_ij
-
-    # artificial_completion_time
-    c_a = zeros((c.shape[0]))
-    for machine in range(1, c_a.shape[0]):
-        lhs = c_a[machine - 1]
-        rhs = c_next[machine]
-        p_ia = artificial_processing_time(m, n, p, u, machine-1, j)
-
-        c_a[machine] = max(lhs, rhs) + p_ia
-
-    return c_a[-1]
-
-
-# Eq. 10
-def artificial_total_completion_time(m, n, p, pi, u, j):
-    # completion_time
-    c = zeros((m+1, len(pi)+1))
-
-    for machine in range(1, c.shape[0]):
-        for job in range(1, c.shape[1]):
-            lhs = c[machine - 1][job]
-            rhs = c[machine][job - 1]
-
-            p_ij = p[machine - 1][pi[job-1]]
-
-            c[machine][job] = max(lhs, rhs) + p_ij
-
-    # completion_time_if_next
-    c_next = zeros((c.shape[0]))
-    for machine in range(1, c_next.shape[0]):
-        lhs = c_next[machine - 1]
-        rhs = c[machine][-1]
-
-        p_ij = p[machine - 1][j]
-
-        c_next[machine] = max(lhs, rhs) + p_ij
-
-    # artificial_completion_time
-    c_a = zeros((c.shape[0]))
-    for machine in range(1, c_a.shape[0]):
-        lhs = c_a[machine - 1]
-        rhs = c_next[machine]
-        p_ia = artificial_processing_time(m, n, p, u, machine-1, j)
-
-        c_a[machine] = max(lhs, rhs) + p_ia
-
-    return c_next[-1] + c_a[-1]
-
 
 # Eq. 11
 def index(m, n, p, pi, u, j):
-    it = weighted_total_machine_idle_time(m, n, p, pi, j)
-    at = artificial_total_completion_time(m, n, p, pi, u, j)
+    # Eq. 1: Tempo de conclusão
+
+    # XXX(staticagent): As primeiras linha e coluna são inutilizadas, e estão
+    # preenchidas com 0 para servir como dummies na comparação feita por max.
+    # Existe um modo de utilizar esse conhecimento para diminuir ainda mais o
+    # consumo de memória, mas, no momento, eu tenho que otimizar outras funções.
+    c = zeros((m+1, len(pi)+1))
+
+    for machine in range(1, c.shape[0]):
+        for job in range(1, c.shape[1]):
+            lhs = c[machine - 1][job]
+            rhs = c[machine][job - 1]
+
+            p_ij = p[machine - 1][pi[job-1]]
+
+            c[machine][job] = max(lhs, rhs) + p_ij
+
+    # Eqs. 6 e 7: Tempo de conclusão da tarefa j se escalonada
+    c_next = zeros((c.shape[0]))
+    for machine in range(1, c_next.shape[0]):
+        rhs = c_next[machine - 1]
+        lhs = c[machine][-1]
+
+        p_ij = p[machine - 1][j]
+
+        c_next[machine] = max(lhs, rhs) + p_ij
+
+    # Eq. 3: Tempo total de ociosidade de máquina poderado
+    it = 0.
+    for i in range(1, m):
+        idle_time = max(c_next[i] - c[i+1][-1], 0)
+        it += weight(m, n, i, len(pi)) * idle_time
+
+    # Eq. 8 e 9: Tempo de conclusão da tarefa artificial
+    c_a = zeros((c.shape[0]))
+    for machine in range(1, c_a.shape[0]):
+        lhs = c_a[machine - 1]
+        rhs = c_next[machine]
+        p_ia = artificial_processing_time(m, n, p, u, machine-1, j)
+
+        c_a[machine] = max(lhs, rhs) + p_ia
+
+    # Eq. 10: Tempo total de conclusão artificial
+    at = c_next[-1] + c_a[-1]
+
     return (len(u) - 2)*it + at
 
 
