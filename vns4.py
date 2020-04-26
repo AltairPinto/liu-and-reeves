@@ -129,7 +129,7 @@ def shake(pi):
 
     return pi_shaken
 
-def vns4(m, n, p, x, k_max, iter_max):
+def vns4(m, n, p, x, iter_max):
     pi = x
     best_solution = pi
 
