@@ -1,6 +1,7 @@
 import numpy as np
 from copy import copy
 
+
 def _l_block_insertion(l, x):
     x = list(x)
     for i in range(len(x)+1-l):
@@ -10,15 +11,17 @@ def _l_block_insertion(l, x):
         for j in range(i+l+1, len(x)+1):  # forward
             yield x[:i] + x[i+l:j] + x[i:i+l] + x[j:]
 
+
 def _block_swap(l1, l2, x):
     x = list(x)
 
     for i in range(len(x)+1-l1):
         for j in range(i-l2):  # backward
-            print(x[:j], x[i:i+l1], x[j+l2:i], x[j:j+l2], x[i+l1:])
+            yield x[:j] + x[i:i+l1] + x[j+l2:i] + x[j:j+l2] + x[i+l1:]
 
         for j in range(i+l1, len(x)+1-l2):  # forward
-            print(x[:i], x[j:j+l2], x[i+l1:j], x[i:i+l1], x[j+l2:])
+            yield x[:i] + x[j:j+l2] + x[i+l1:j] + x[i:i+l1] + x[j+l2:]
+
 
 def rvnd(p, x):
     pi = x
