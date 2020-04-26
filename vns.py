@@ -114,6 +114,7 @@ def job_interchange_ls(m, n, p, pi, iter_max):
 
     return new_pi
 
+# XXX: esse shake tá zuado, não deve ser assim
 def shake(pi):
     pi_shaken = copy(pi)
 
@@ -129,29 +130,30 @@ def shake(pi):
 
     return pi_shaken
 
-def vns4(m, n, p, x, iter_max):
+# FIXME: trocar número de iterações por tempo de CPU
+def vns(m, n, p, x, iter_max):
     pi = x
     best_solution = pi
+    best_solution_c_sum = total_completion_time(m, n, p, best_solution)
 
     # FIXME: trocar número de iterações por tempo de CPU
-    for _ in range(0, iter_max):
-        condition = True
+    for _ in range(iter_max):
+        better = True
 
         # FIXME: trocar número de iterações por tempo de CPU
-        for _ in range(0, iter_max):
-            pi = job_interchange_ls(m, n, p, pi, iter_max)
-            condition, pi = reduced_ji(m, n, p, pi)
+        for _ in range(iter_max):
+            # TODO: local search, RVND
 
-            if not condition:
-                # Não houve melhora
+            if not better:
                 break
 
-        if total_completion_time(m, n, p, pi) < total_completion_time(m, n, p, best_solution):
+        c_sum = total_completion_time(m, n, p, pi)
+        if c_sum < best_solution_c_sum:
             best_solution = pi
+            best_solution_c_sum = c_sum
 
-        pi = best_solution
+        pi = shake(copy(best_solution))
 
-        pi = shake(pi)
     return best_solution
 
 
@@ -167,9 +169,8 @@ p = array([
 # Resultado dado por LR(1)
 x = [2, 16, 8, 14, 13, 15, 5, 18, 12, 6, 11, 10, 7, 1, 0, 19, 3, 9, 4, 17]
 
-k_max = 5
 iter_max = 10
 
-res = vns4(m, n, p, x, k_max, iter_max)
+res = vns(m, n, p, x, iter_max)
 print(res)
 print(total_completion_time(m, n, p, res))
