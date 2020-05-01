@@ -193,23 +193,27 @@ def _multiple_swap(l1, l2, x):
     for _ in range(randint(1, 3)):
         i = randint(0, len(x)-l1-l2)
         j = randint(i+l1, len(x)-l2)
-
+        # print("i: ", i)
+        # print("j: ", j)
         b1 = newx[:i]
         b2 = newx[i:i+l1]
         b3 = newx[i+l1:j]
         b4 = newx[j:j+l2]
         b5 = newx[j+l2:]
         newx = np.concatenate((b1, b4, b3, b2, b5)).ravel()
+        # print("newx: ", newx)
 
     return newx
 
 def shake(l1, l2, x):
+    # print('old_x: ', x)
     if randint(0, 1) == 0:
         newx = _multiple_swap(l1, l2, x)
         if not np.array_equal(newx, x):
             return newx
 
     newx = _multiple_swap(1, 1, x)
+    # print("new_x: ", newx)
     return newx
 
 
