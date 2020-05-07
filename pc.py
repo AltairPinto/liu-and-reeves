@@ -5,35 +5,6 @@ from time import time
 
 import numpy as np
 
-
-# p = n * m
-p = np.array([
-    [54, 79, 16, 66, 58],
-    [83,  3, 89, 58, 56],
-    [15, 11, 49, 31, 20],
-    [71, 99, 15, 68, 85],
-    [77, 56, 89, 78, 53],
-    [36, 70, 45, 91, 35],
-    [53, 99, 60, 13, 53],
-    [38, 60, 23, 59, 41],
-    [27,  5, 57, 49, 69],
-    [87, 56, 64, 85, 13],
-    [76,  3,  7, 85, 86],
-    [91, 61,  1,  9, 72],
-    [14, 73, 63, 39,  8],
-    [29, 75, 41, 41, 49],
-    [12, 47, 63, 56, 47],
-    [77, 14, 47, 40, 87],
-    [32, 21, 26, 54, 58],
-    [87, 86, 75, 77, 18],
-    [68,  5, 77, 51, 68],
-    [94, 77, 40, 31, 28]])
-
-# Resultado dado por LR(1)
-x_lr = np.array(
-    [2, 16, 8, 14, 13, 15, 5, 18, 12, 6, 11, 10, 7, 1, 0, 19, 3, 9, 4, 17])
-
-
 def _c_sum(p, pi):
     c = p[pi]
 
@@ -152,12 +123,14 @@ def _block_swap(l, l_swap, x):
             yield np.concatenate((b1, b4, b3, b2, b5)).ravel()
 
 
-def rvnd(cost, L_, x):
+def rvnd(cost, L_, x, tstart, cputime):
     # Inicialize a lista de vizinhanças L
     L = copy(L_)
 
     # Enquanto L tiver elementos:
     while len(L) > 0:
+        if time() - tstart >= cputime:
+            break
 
         # Selecione uma vizinhança N dentro de L de forma aleatória
         N = choice(L)
@@ -166,6 +139,8 @@ def rvnd(cost, L_, x):
         best = None
         best_cost = float('inf')
         for x_n in N(x):
+            if time() - tstart >= cputime:
+                break
             x_n_cost = cost(x_n)
             if x_n_cost < best_cost:
                 best, best_cost = x_n, x_n_cost
@@ -190,7 +165,8 @@ def _multiple_swap(l1, l2, x):
         l1, l2 = l2, l1
 
     newx = x
-    for _ in range(randint(1, 3)):
+    #for _ in range(randint(1, 3)):
+    for _ in range(randint(1, 7)):
         i = randint(0, len(x)-l1-l2)
         j = randint(i+l1, len(x)-l2)
         # print("i: ", i)
@@ -242,12 +218,12 @@ def ils(p, cputime):
     start = time()
 
     s_0 = _ff(p, round(n/m))  # XXX: FF(x) tem alguns parâmetros, pode mexer neles
-    s_new = rvnd(cost, L, s_0)
+    s_new = rvnd(cost, L, s_0, start, cputime)
     s_new_cost = cost(s_new)
 
     while time() - start < cputime:
         s_shaken = shake(2, 3, s_new)  # XXX: modificar valores ao seu bel prazer
-        s_tmp = rvnd(cost, L, s_shaken)
+        s_tmp = rvnd(cost, L, s_shaken, start, cputime)
         s_tmp_cost = cost(s_tmp)
 
         # Critério de aceitação
@@ -281,7 +257,7 @@ def vns(p, cputime):
         while k < len(L):
             N = L[k]
             s_tmp = choice(list(N(s_new)))
-            s_tmp2 = rvnd(cost, L, s_tmp)
+            s_tmp2 = rvnd(cost, L, s_tmp, start, cputime)
             s_tmp2_cost = cost(s_tmp2)
 
             # Critério de aceitação
